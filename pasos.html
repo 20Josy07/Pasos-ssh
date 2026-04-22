@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurador de Comandos SQL</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --accent: #10b981;
+            --bg: #0f172a;
+            --warning: #ef4444;
+            --info: #3b82f6;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, #0f172a);
+            color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .config-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+            width: 100%;
+            max-width: 700px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        input {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            color: white;
+            padding: 10px;
+            font-size: 1.2rem;
+            width: 80px;
+            text-align: center;
+            outline: none;
+        }
+
+        .step-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            width: 100%;
+            max-width: 700px;
+            transition: all 0.3s ease;
+        }
+
+        h2 { color: var(--primary); font-size: 1.1rem; margin-top: 0; }
+        
+        .code-block {
+            background: #000;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Fira Code', monospace;
+            color: var(--accent);
+            position: relative;
+            margin: 10px 0;
+            cursor: pointer;
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+
+        .code-block:hover::after {
+            content: "Click para copiar";
+            position: absolute;
+            right: 10px;
+            top: 5px;
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+
+        .terminal-block {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            color: #cbd5e1;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            border-left: 3px solid var(--warning);
+            margin: 10px 0;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            overflow-x: auto;
+        }
+
+        .alert-box {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid var(--info);
+            padding: 12px 15px;
+            border-radius: 0 8px 8px 0;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .terminal-highlight { color: var(--accent); font-weight: bold; }
+        .terminal-user { color: #facc15; }
+        .terminal-muted { color: #64748b; }
+
+        .label { font-weight: bold; color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="config-panel">
+        <h1 style="margin-top:0">Configurador de Guía SQL</h1>
+        <p>Ingresa tu número de la lista (1-20):</p>
+        <input type="number" id="userNum" value="1" min="1" max="20" oninput="updateCommands()">
+    </div>
+
+    <div id="stepsContainer" style="width: 100%; max-width: 700px;">
+        <div class="step-card">
+            <h2>0. Primera conexión y Cambio de Clave (Obligatorio)</h2>
+            <p class="label">1. Comando para iniciar sesión:</p>
+            <div class="code-block" onclick="copyText(this)" id="cmd-ssh">ssh estuserdb1@72.62.167.191</div>
+            <p>Clave inicial asignada: <span id="val-pass" class="terminal-highlight">pass1</span></p>
+            
+            <div class="alert-box">
+                <strong>🔒 ¡Aclaración importante!</strong> Al escribir contraseñas en la terminal, <strong>no verás asteriscos (***) ni puntitos</strong>, y el cursor no se moverá. Esto <strong>no es un bug</strong> ni un error, es una medida de seguridad nativa de Linux. Simplemente escribe tu contraseña con confianza y presiona <code>Enter</code>.
+            </div>
+
+            <p class="label">2. Pasos en la consola:</p>
+            <div class="terminal-block">
+                <span class="terminal-muted">The authenticity of host '72.62.167.191' can't be established.<br>
+                ED25519 key fingerprint is SHA256:...</span><br>
+                Are you sure you want to continue connecting (yes/no/[fingerprint])? <span class="terminal-highlight">yes</span><br>
+                <br>
+                WARNING: Your password has expired.<br>
+                You must change your password now and login again!<br>
+                Changing password for user <span id="term-user" class="terminal-user">estuserdb1</span>.<br>
+                (Current) UNIX password: <span id="term-pass" class="terminal-highlight">pass1</span><br>
+                Enter new UNIX password: <i>[Escribe tu nueva clave personal]</i><br>
+                Retype new UNIX password: <i>[Repite tu nueva clave personal]</i><br>
+                Connection to 72.62.167.191 closed.
+            </div>
+        </div>
+
+        <div class="step-card">
+            <h2>1. Subir archivo (SCP)</h2>
+            <p class="label">Desde tu PC (usa tu NUEVA clave personal):</p>
+            <div class="code-block" onclick="copyText(this)" id="cmd-scp">scp dbparasql.sql estuserdb1@formxa.com:/home/estuserdb1/</div>
+        </div>
+
+        <div class="step-card">
+            <h2>2. Importar a MySQL</h2>
+            <p class="label">Dentro del servidor (aquí la clave sigue siendo la inicial):</p>
+            <div class="code-block" onclick="copyText(this)" id="cmd-mysql">mysql -h 127.0.0.1 -P 3307 -u estuserdb1 -p db1 < dbparasql.sql</div>
+            <p>DB Name: <span id="val-db" class="terminal-highlight">db1</span> | Clave MySQL: <span id="val-db-pass" class="terminal-highlight">pass1</span></p>
+        </div>
+
+        <div class="step-card">
+            <h2>3. Verificar Tablas</h2>
+            <p class="label">Entra al monitor de MySQL:</p>
+            <div class="code-block" onclick="copyText(this)" id="cmd-mysql-login">mysql -h 127.0.0.1 -P 3307 -u estuserdb1 -p</div>
+            <p class="label">Una vez dentro, ejecuta:</p>
+            <div class="code-block" onclick="copyText(this)" id="cmd-show-tables">USE db1;
+SHOW TABLES;</div>
+        </div>
+    </div>
+
+    <script>
+        function updateCommands() {
+            const num = document.getElementById('userNum').value || 1;
+            const user = `estuserdb${num}`;
+            const db = `db${num}`;
+            const pass = `pass${num}`;
+
+            // Actualizar comandos
+            document.getElementById('cmd-ssh').innerText = `ssh ${user}@72.62.167.191`;
+            document.getElementById('cmd-scp').innerText = `scp dbparasql.sql ${user}@formxa.com:/home/${user}/`;
+            document.getElementById('cmd-mysql').innerText = `mysql -h 127.0.0.1 -P 3307 -u ${user} -p ${db} < dbparasql.sql`;
+            document.getElementById('cmd-mysql-login').innerText = `mysql -h 127.0.0.1 -P 3307 -u ${user} -p`;
+            document.getElementById('cmd-show-tables').innerText = `USE ${db};\nSHOW TABLES;`;
+            
+            // Actualizar textos dinámicos
+            document.getElementById('val-pass').innerText = pass;
+            document.getElementById('val-db').innerText = db;
+            document.getElementById('val-db-pass').innerText = pass;
+            
+            // Actualizar la simulación de terminal
+            document.getElementById('term-user').innerText = user;
+            document.getElementById('term-pass').innerText = pass;
+        }
+
+        function copyText(element) {
+            const text = element.innerText;
+            navigator.clipboard.writeText(text);
+            
+            // Feedback visual al copiar
+            const originalColor = element.style.color;
+            element.style.color = "white";
+            setTimeout(() => {
+                element.style.color = originalColor;
+            }, 200);
+        }
+    </script>
+
+</body>
+</html>
